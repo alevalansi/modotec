@@ -5,7 +5,7 @@ import { Send, Loader2, FileText, Plus, Trash2, BookOpen, AlertTriangle } from '
 import { useApp } from '../context/AppContext';
 import { getDocuments, addDocument, deleteDocument, addQueryLog, addKnowledgeEntry } from '../utils/storage';
 import { askGemini } from '../lib/gemini';
-import { extractTextFromPDF, INSTRUMENT_TYPES } from '../utils/helpers';
+import { extractTextFromPDF, findRelevantChunks, INSTRUMENT_TYPES } from '../utils/helpers';
 import { PageWrapper, PageHeader, Card, Button, Textarea } from '../components/Layout';
 
 export default function InstrumentView() {
@@ -93,7 +93,8 @@ export default function InstrumentView() {
     setAsking(true);
 
     try {
-      const allDocContent = documents.map((d) => d.content || '').join('\n\n');
+      const fullContent = documents.map((d) => d.content || '').join('\n\n');
+      const allDocContent = fullContent ? findRelevantChunks(fullContent, q) : null;
       const answer = await askGemini({
         question: q,
         documentContent: allDocContent || null,
@@ -109,7 +110,7 @@ export default function InstrumentView() {
         brand_name: brand?.name,
         question: q,
         answer,
-        source: allDocContent ? 'manual' : 'general',
+        source: fullContent ? 'manual' : 'general',
       });
       await refreshQueriesLog();
     } catch (err) {

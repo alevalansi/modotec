@@ -26,6 +26,22 @@ export const INSTRUMENT_TYPES = {
   other: 'Otro',
 };
 
+export function findRelevantChunks(content, question, topN = 5, chunkSize = 600) {
+  if (!content) return '';
+  const chunks = [];
+  for (let i = 0; i < content.length; i += chunkSize) {
+    chunks.push(content.slice(i, i + chunkSize));
+  }
+  const words = question.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+  const scored = chunks.map((chunk) => {
+    const lower = chunk.toLowerCase();
+    const score = words.reduce((acc, w) => acc + (lower.includes(w) ? 1 : 0), 0);
+    return { chunk, score };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, topN).map((s) => s.chunk).join('\n...\n');
+}
+
 export async function extractTextFromPDF(file) {
   const pdfjsLib = await import('pdfjs-dist');
   pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
